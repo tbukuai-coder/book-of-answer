@@ -5,41 +5,44 @@ import answers from './answers';
 const TOTAL = answers.length; // 100
 
 function App() {
-  const [phase, setPhase] = useState('idle'); // idle | spinning | revealed
+  const [phase, setPhase] = useState('idle');
+  // idle | spinning | stopping | pageflip | revealed
   const [currentNumber, setCurrentNumber] = useState(null);
   const [answerIndex, setAnswerIndex] = useState(null);
-  const intervalRef = useRef(null);
+  const [flipProgress, setFlipProgress] = useState(0);
   const timeoutRef = useRef(null);
+  const rafRef = useRef(null);
 
   const startSpin = useCallback(() => {
-    if (phase === 'spinning') return;
+    if (phase === 'spinning' || phase === 'stopping' || phase === 'pageflip') return;
     setPhase('spinning');
 
-    // Pick a random target index (0–99)
     const target = Math.floor(Math.random() * TOTAL);
     setAnswerIndex(target);
 
-    // Number cycling effect
     let count = 0;
-    const totalSteps = 30 + Math.floor(Math.random() * 20); // 30-50 steps
-    let speed = 50; // start fast
+    const totalSteps = 35 + Math.floor(Math.random() * 15);
+    let speed = 45;
 
     const tick = () => {
       count++;
-      const displayNum = Math.floor(Math.random() * TOTAL);
-      setCurrentNumber(displayNum);
+      setCurrentNumber(Math.floor(Math.random() * TOTAL));
 
       if (count >= totalSteps) {
-        // Land on the target
+        // Landed — show the landed number briefly, then start page flip
         setCurrentNumber(target);
-        setPhase('revealed');
+        setPhase('stopping');
+        timeoutRef.current = setTimeout(() => {
+          startPageFlip(target);
+        }, 800);
         return;
       }
 
-      // Slow down progressively
-      if (count > totalSteps * 0.6) speed += 30;
-      if (count > totalSteps * 0.8) speed += 60;
-      if (count > totalSteps * 0.9) speed += 120;
+      // Progressive slowdown
+      if (count > totalSteps * 0.55) speed += 25;
+      if (count > totalSteps * 0.75) speed += 50;
+      if (count > totalSteps * 0.88) speed += 100;
+      if (count > totalSteps * 0.95) speed += 200;
 
       timeoutRef.current = setTimeout(tick, speed);
     };
@@ -47,12 +50,36 @@ function App() {
     timeoutRef.current = setTimeout(tick, speed);
   }, [phase]);
 
+  const startPageFlip = (target) => {
+    setPhase('pageflip');
+    setFlipProgress(0);
+
+    const duration = 1200; // ms
+    const startTime = performance.now();
+
+    const animate = (now) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      setFlipProgress(progress);
+
+      if (progress < 1) {
+        rafRef.current = requestAnimationFrame(animate);
+      } else {
+        // Flip complete — reveal the answer
+        setPhase('revealed');
+      }
+    };
+
+    rafRef.current = requestAnimationFrame(animate);
+  };
+
   const reset = () => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    if (intervalRef.current) clearInterval(intervalRef.current);
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
     setPhase('idle');
     setCurrentNumber(null);
     setAnswerIndex(null);
+    setFlipProgress(0);
   };
 
   return (
@@ -77,11 +104,10 @@ function App() {
 
       <main className="main">
         <div className={`book ${phase}`}>
-          {/* Spine / book visual */}
           <div className="book-spine" />
 
-          {/* Number display */}
           <div className="book-display">
+            {/* ---- IDLE ---- */}
             {phase === 'idle' && (
               <div className="book-inner">
                 <div className="book-question">?</div>
@@ -89,6 +115,7 @@ function App() {
               </div>
             )}
 
+            {/* ---- SPINNING ---- */}
             {phase === 'spinning' && (
               <div className="book-inner spinning">
                 <div className="number-label">Turning the pages...</div>
@@ -98,6 +125,43 @@ function App() {
               </div>
             )}
 
+            {/* ---- STOPPING (number landed, brief pause) ---- */}
+            {phase === 'stopping' && (
+              <div className="book-inner stopping">
+                <div className="number-label">Page found</div>
+                <div className="number-display landed">
+                  {currentNumber !== null ? String(currentNumber + 1).padStart(2, '0') : '--'}
+                </div>
+              </div>
+            )}
+
+            {/* ---- PAGE FLIP ---- */}
+            {phase === 'pageflip' && (
+              <div className="book-inner pageflip">
+                <div className="page-flip-container">
+                  <div
+                    className="page-flip-right"
+                    style={{
+                      transform: `rotateY(${flipProgress * 180}deg)`,
+                    }}
+                  >
+                    <div className="page-flip-face page-flip-front">
+                      <div className="number-display">
+                        {currentNumber !== null ? String(currentNumber + 1).padStart(2, '0') : '--'}
+                      </div>
+                      <div className="page-flip-hint">Page {currentNumber !== null ? currentNumber + 1 : '--'}</div>
+                    </div>
+                    <div className="page-flip-face page-flip-back">
+                      <p className="answer-text-preview">
+                        {answerIndex !== null ? answers[answerIndex] : ''}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ---- REVEALED ---- */}
             {phase === 'revealed' && answerIndex !== null && (
               <div className="book-inner revealed">
                 <div className="answer-number">Page {currentNumber !== null ? currentNumber + 1 : '--'}</div>
