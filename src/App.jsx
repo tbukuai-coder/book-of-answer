@@ -51,7 +51,7 @@ function App() {
     setPhase('shimmer');
     setShimmerProgress(0);
 
-    const duration = 1400;
+    const duration = 900;
     const startTime = performance.now();
 
     const animate = (now) => {
@@ -167,16 +167,7 @@ function App() {
                     {currentNumber !== null ? String(currentNumber + 1).padStart(2, '0') : '--'}
                   </div>
 
-                  <div
-                    className="shimmer-answer"
-                    style={{
-                      opacity: shimmerProgress > 0.4 ? (shimmerProgress - 0.4) / 0.6 : 0,
-                      transform: `scale(${0.8 + (shimmerProgress > 0.4 ? (shimmerProgress - 0.4) / 0.6 : 0) * 0.2})`,
-                      filter: `blur(${Math.max(0, (1 - shimmerProgress) * 6)}px)`,
-                    }}
-                  >
-                    <p className="answer-text">{answerIndex !== null ? answers[answerIndex] : ''}</p>
-                  </div>
+
                 </div>
               </div>
             )}
