@@ -6,7 +6,7 @@ const TOTAL = answers.length; // 100
 
 function App() {
   const [phase, setPhase] = useState('idle');
-  // idle | spinning | stopping | shimmer | revealed
+  // idle | spinning | shimmer | revealed
   const [currentNumber, setCurrentNumber] = useState(null);
   const [answerIndex, setAnswerIndex] = useState(null);
   const [shimmerProgress, setShimmerProgress] = useState(0);
@@ -14,7 +14,7 @@ function App() {
   const rafRef = useRef(null);
 
   const startSpin = useCallback(() => {
-    if (phase === 'spinning' || phase === 'stopping' || phase === 'shimmer') return;
+    if (phase !== 'idle' && phase !== 'revealed') return;
     setPhase('spinning');
 
     const target = Math.floor(Math.random() * TOTAL);
@@ -29,14 +29,13 @@ function App() {
       setCurrentNumber(Math.floor(Math.random() * TOTAL));
 
       if (count >= totalSteps) {
+        // Number lands — immediately start shimmer
         setCurrentNumber(target);
-        setPhase('stopping');
-        timeoutRef.current = setTimeout(() => {
-          startShimmer();
-        }, 700);
+        startShimmer();
         return;
       }
 
+      // Progressive slowdown
       if (count > totalSteps * 0.55) speed += 25;
       if (count > totalSteps * 0.75) speed += 50;
       if (count > totalSteps * 0.88) speed += 100;
@@ -72,14 +71,13 @@ function App() {
 
   const reset = () => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    if (rfRef.current) cancelAnimationFrame(rafRef.current);
     setPhase('idle');
     setCurrentNumber(null);
     setAnswerIndex(null);
     setShimmerProgress(0);
   };
 
-  // Generate shimmer particles
   const shimmerParticles = Array.from({ length: 12 }, (_, i) => ({
     id: i,
     angle: (i / 12) * 360,
@@ -131,21 +129,10 @@ function App() {
               </div>
             )}
 
-            {/* ---- STOPPING ---- */}
-            {phase === 'stopping' && (
-              <div className="book-inner stopping">
-                <div className="number-label">Page found</div>
-                <div className="number-display landed">
-                  {currentNumber !== null ? String(currentNumber + 1).padStart(2, '0') : '--'}
-                </div>
-              </div>
-            )}
-
             {/* ---- SHIMMER ---- */}
             {phase === 'shimmer' && (
               <div className="book-inner shimmer">
                 <div className="shimmer-container">
-                  {/* Particles exploding outward */}
                   {shimmerParticles.map((p) => {
                     const rad = (p.angle * Math.PI) / 180;
                     const tx = Math.cos(rad) * p.distance * shimmerProgress;
@@ -169,7 +156,6 @@ function App() {
                     );
                   })}
 
-                  {/* Number dissolving */}
                   <div
                     className="number-display shimmer-out"
                     style={{
@@ -181,7 +167,6 @@ function App() {
                     {currentNumber !== null ? String(currentNumber + 1).padStart(2, '0') : '--'}
                   </div>
 
-                  {/* Answer materializing */}
                   <div
                     className="shimmer-answer"
                     style={{
