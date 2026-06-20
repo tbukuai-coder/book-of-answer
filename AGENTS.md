@@ -41,11 +41,6 @@ npm run build
 # Deploy dist/ to any static host
 ```
 
-### Enable GitHub Pages (one-time)
-
-1. Go to **Settings → Pages**
-2. Under **Source**, select **GitHub Actions`
-
 ## Project Structure
 
 ```
