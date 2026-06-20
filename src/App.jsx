@@ -201,11 +201,6 @@ function App() {
               {phase === 'revealed' ? 'Ask Again' : 'Open the Book'}
             </button>
           )}
-          {phase === 'revealed' && (
-            <button className="btn btn-secondary" onClick={reset}>
-              Close
-            </button>
-          )}
         </div>
       </main>
 
