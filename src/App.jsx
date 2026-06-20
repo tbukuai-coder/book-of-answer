@@ -29,13 +29,11 @@ function App() {
       setCurrentNumber(Math.floor(Math.random() * TOTAL));
 
       if (count >= totalSteps) {
-        // Number lands — immediately start shimmer
         setCurrentNumber(target);
         startShimmer();
         return;
       }
 
-      // Progressive slowdown
       if (count > totalSteps * 0.55) speed += 25;
       if (count > totalSteps * 0.75) speed += 50;
       if (count > totalSteps * 0.88) speed += 100;
@@ -69,15 +67,6 @@ function App() {
     rafRef.current = requestAnimationFrame(animate);
   };
 
-  const reset = () => {
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    if (rfRef.current) cancelAnimationFrame(rafRef.current);
-    setPhase('idle');
-    setCurrentNumber(null);
-    setAnswerIndex(null);
-    setShimmerProgress(0);
-  };
-
   const shimmerParticles = Array.from({ length: 12 }, (_, i) => ({
     id: i,
     angle: (i / 12) * 360,
@@ -85,6 +74,8 @@ function App() {
     size: 2 + Math.random() * 4,
     delay: Math.random() * 0.3,
   }));
+
+  const canClick = phase === 'idle' || phase === 'revealed';
 
   return (
     <div className="app">
@@ -103,11 +94,15 @@ function App() {
           <span className="title-icon">📖</span>
           The Book of Answers
         </h1>
-        <p className="subtitle">Ask your question in your mind. Click to reveal.</p>
+        <p className="subtitle">Ask your question in your mind. Click the book to reveal.</p>
       </header>
 
       <main className="main">
-        <div className={`book ${phase}`}>
+        <div
+          className={`book ${phase}`}
+          onClick={canClick ? startSpin : undefined}
+          style={{ cursor: canClick ? 'pointer' : 'default' }}
+        >
           <div className="book-spine" />
 
           <div className="book-display">
@@ -115,7 +110,6 @@ function App() {
             {phase === 'idle' && (
               <div className="book-inner">
                 <div className="book-question">?</div>
-                <div className="book-hint">Click to open</div>
               </div>
             )}
 
@@ -166,8 +160,6 @@ function App() {
                   >
                     {currentNumber !== null ? String(currentNumber + 1).padStart(2, '0') : '--'}
                   </div>
-
-
                 </div>
               </div>
             )}
@@ -181,17 +173,6 @@ function App() {
               </div>
             )}
           </div>
-        </div>
-
-        <div className="controls">
-          {(phase === 'idle' || phase === 'revealed') && (
-            <button
-              className={`btn btn-primary ${phase === 'idle' ? 'pulse' : ''}`}
-              onClick={startSpin}
-            >
-              {phase === 'revealed' ? 'Ask Again' : 'Open the Book'}
-            </button>
-          )}
         </div>
       </main>
 
