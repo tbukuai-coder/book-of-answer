@@ -1,16 +1,79 @@
-# React + Vite
+# 📖 The Book of Answers
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A mystical single-page web app. Ask a question in your mind, click to reveal your fate.
 
-Currently, two official plugins are available:
+**[Live Demo →](https://tbukuai-coder.github.io/book-of-answer/)**
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Features
 
-## React Compiler
+- 🎲 Number cycling animation with progressive slowdown
+- 📖 3D page-flip transition that reveals your answer
+- ✨ 100 original mystical answers
+- 📱 Mobile-first responsive design
+- 🌙 Dark theme with gold accents and floating particles
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Tech Stack
 
-## Expanding the ESLint configuration
+- React + Vite
+- `vite-plugin-singlefile` — inlines everything into one `index.html`
+- GitHub Actions — auto-deploys to GitHub Pages on push to `main`
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Getting Started
+
+```bash
+# Clone the repo
+git clone https://github.com/tbukuai-coder/book-of-answer.git
+cd book-of-answer
+
+# Install dependencies
+npm install
+
+# Run dev server
+npm run dev
+```
+
+## Build
+
+```bash
+npm run build
+```
+
+Output goes to `dist/` — a single `index.html` (~205KB) with all JS and CSS inlined. No server needed.
+
+## Deploy
+
+Push to `main` and the GitHub Actions workflow handles the rest:
+
+```bash
+git add -A
+git commit -m "your message"
+git push
+```
+
+The workflow builds the project and deploys `dist/` to GitHub Pages automatically.
+
+To enable GitHub Pages (one-time):
+
+1. Go to **Settings → Pages**
+2. Under **Source**, select **GitHub Actions**
+
+## Project Structure
+
+```
+book-of-answer/
+├── src/
+│   ├── App.jsx        # Main app with spin → stop → flip → reveal flow
+│   ├── App.css        # All styles and animations
+│   ├── answers.js     # 100 original answers
+│   └── main.jsx       # React entry point
+├── .github/
+│   └── workflows/
+│       └── deploy.yml # Auto-deploy to GitHub Pages
+├── index.html         # Vite entry
+├── vite.config.js     # Vite + singlefile plugin
+└── package.json
+```
+
+## Answers
+
+All 100 answers in `src/answers.js` are original. Add or edit them freely — they're just strings in an array.
