@@ -6,15 +6,15 @@ const TOTAL = answers.length; // 100
 
 function App() {
   const [phase, setPhase] = useState('idle');
-  // idle | spinning | stopping | pageflip | revealed
+  // idle | spinning | stopping | shimmer | revealed
   const [currentNumber, setCurrentNumber] = useState(null);
   const [answerIndex, setAnswerIndex] = useState(null);
-  const [flipProgress, setFlipProgress] = useState(0);
+  const [shimmerProgress, setShimmerProgress] = useState(0);
   const timeoutRef = useRef(null);
   const rafRef = useRef(null);
 
   const startSpin = useCallback(() => {
-    if (phase === 'spinning' || phase === 'stopping' || phase === 'pageflip') return;
+    if (phase === 'spinning' || phase === 'stopping' || phase === 'shimmer') return;
     setPhase('spinning');
 
     const target = Math.floor(Math.random() * TOTAL);
@@ -29,16 +29,14 @@ function App() {
       setCurrentNumber(Math.floor(Math.random() * TOTAL));
 
       if (count >= totalSteps) {
-        // Landed — show the landed number briefly, then start page flip
         setCurrentNumber(target);
         setPhase('stopping');
         timeoutRef.current = setTimeout(() => {
-          startPageFlip(target);
-        }, 800);
+          startShimmer();
+        }, 700);
         return;
       }
 
-      // Progressive slowdown
       if (count > totalSteps * 0.55) speed += 25;
       if (count > totalSteps * 0.75) speed += 50;
       if (count > totalSteps * 0.88) speed += 100;
@@ -50,22 +48,21 @@ function App() {
     timeoutRef.current = setTimeout(tick, speed);
   }, [phase]);
 
-  const startPageFlip = (target) => {
-    setPhase('pageflip');
-    setFlipProgress(0);
+  const startShimmer = () => {
+    setPhase('shimmer');
+    setShimmerProgress(0);
 
-    const duration = 1200; // ms
+    const duration = 1400;
     const startTime = performance.now();
 
     const animate = (now) => {
       const elapsed = now - startTime;
       const progress = Math.min(elapsed / duration, 1);
-      setFlipProgress(progress);
+      setShimmerProgress(progress);
 
       if (progress < 1) {
         rafRef.current = requestAnimationFrame(animate);
       } else {
-        // Flip complete — reveal the answer
         setPhase('revealed');
       }
     };
@@ -79,8 +76,17 @@ function App() {
     setPhase('idle');
     setCurrentNumber(null);
     setAnswerIndex(null);
-    setFlipProgress(0);
+    setShimmerProgress(0);
   };
+
+  // Generate shimmer particles
+  const shimmerParticles = Array.from({ length: 12 }, (_, i) => ({
+    id: i,
+    angle: (i / 12) * 360,
+    distance: 40 + Math.random() * 60,
+    size: 2 + Math.random() * 4,
+    delay: Math.random() * 0.3,
+  }));
 
   return (
     <div className="app">
@@ -125,7 +131,7 @@ function App() {
               </div>
             )}
 
-            {/* ---- STOPPING (number landed, brief pause) ---- */}
+            {/* ---- STOPPING ---- */}
             {phase === 'stopping' && (
               <div className="book-inner stopping">
                 <div className="number-label">Page found</div>
@@ -135,27 +141,56 @@ function App() {
               </div>
             )}
 
-            {/* ---- PAGE FLIP ---- */}
-            {phase === 'pageflip' && (
-              <div className="book-inner pageflip">
-                <div className="page-flip-container">
+            {/* ---- SHIMMER ---- */}
+            {phase === 'shimmer' && (
+              <div className="book-inner shimmer">
+                <div className="shimmer-container">
+                  {/* Particles exploding outward */}
+                  {shimmerParticles.map((p) => {
+                    const rad = (p.angle * Math.PI) / 180;
+                    const tx = Math.cos(rad) * p.distance * shimmerProgress;
+                    const ty = Math.sin(rad) * p.distance * shimmerProgress;
+                    const opacity = shimmerProgress > 0.1
+                      ? Math.max(0, 1 - (shimmerProgress - p.delay) / (1 - p.delay))
+                      : 0;
+
+                    return (
+                      <span
+                        key={p.id}
+                        className="shimmer-particle"
+                        style={{
+                          width: p.size,
+                          height: p.size,
+                          transform: `translate(${tx}px, ${ty}px)`,
+                          opacity,
+                          transitionDelay: `${p.delay}s`,
+                        }}
+                      />
+                    );
+                  })}
+
+                  {/* Number dissolving */}
                   <div
-                    className="page-flip-right"
+                    className="number-display shimmer-out"
                     style={{
-                      transform: `rotateY(${flipProgress * 180}deg)`,
+                      opacity: 1 - shimmerProgress * 1.5,
+                      transform: `scale(${1 + shimmerProgress * 0.3})`,
+                      filter: `blur(${shimmerProgress * 8}px)`,
                     }}
                   >
-                    <div className="page-flip-face page-flip-front">
-                      <div className="number-display">
-                        {currentNumber !== null ? String(currentNumber + 1).padStart(2, '0') : '--'}
-                      </div>
-                      <div className="page-flip-hint">Page {currentNumber !== null ? currentNumber + 1 : '--'}</div>
-                    </div>
-                    <div className="page-flip-face page-flip-back">
-                      <p className="answer-text-preview">
-                        {answerIndex !== null ? answers[answerIndex] : ''}
-                      </p>
-                    </div>
+                    {currentNumber !== null ? String(currentNumber + 1).padStart(2, '0') : '--'}
+                  </div>
+
+                  {/* Answer materializing */}
+                  <div
+                    className="shimmer-answer"
+                    style={{
+                      opacity: shimmerProgress > 0.4 ? (shimmerProgress - 0.4) / 0.6 : 0,
+                      transform: `scale(${0.8 + (shimmerProgress > 0.4 ? (shimmerProgress - 0.4) / 0.6 : 0) * 0.2})`,
+                      filter: `blur(${Math.max(0, (1 - shimmerProgress) * 6)}px)`,
+                    }}
+                  >
+                    <p className="answer-text">{answerIndex !== null ? answers[answerIndex] : ''}</p>
                   </div>
                 </div>
               </div>
